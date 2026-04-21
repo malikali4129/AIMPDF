@@ -20,7 +20,7 @@ app.use(express.json());
 
 // API Routes
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'PDF Oasis Server is running' });
+  res.json({ status: 'ok', message: 'PDF Forge Professional Server is running' });
 });
 
 // Example server-side PDF operation: Merge

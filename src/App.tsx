@@ -147,21 +147,12 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [outputName, setOutputName] = useState('pdf_forge_result');
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [password, setPassword] = useState('');
   const [isPro, setIsPro] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
   const [activationCode, setActivationCode] = useState('');
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
 
   const handleActivatePro = () => {
     if (activationCode === 'AIMLABPREMIUM') {
@@ -372,7 +363,7 @@ export default function App() {
       const pages = pdfDoc.getPages();
       const firstPage = pages[0];
       const { width, height } = firstPage.getSize();
-      firstPage.drawText('EDITED BY PDF OASIS', {
+      firstPage.drawText('PROCESSED BY PDF FORGE', {
         x: width / 2 - 100,
         y: height - 50,
         size: 20,
@@ -427,38 +418,33 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-black transition-colors duration-300 overflow-x-hidden">
-      <div className="flex flex-col flex-grow max-w-[1024px] mx-auto w-full bg-white dark:bg-[#050505] shadow-2xl min-h-screen border-x border-slate-200 dark:border-slate-800">
+    <div className="min-h-screen flex flex-col bg-slate-50 transition-colors duration-300 overflow-x-hidden font-sans">
+      <div className="flex flex-col flex-grow max-w-[1100px] mx-auto w-full bg-white shadow-2xl min-h-screen border-x border-slate-200">
         
         {/* Header */}
-        <header className="h-16 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 sticky top-0 z-50">
-          <div className="flex items-center gap-2 font-extrabold text-[20px] text-slate-900 dark:text-white tracking-tight cursor-pointer" onClick={resetTool}>
-            <div className="w-8 h-8 bg-primary dark:bg-neon-green rounded flex items-center justify-center text-white dark:text-black text-[14px]">PDF</div>
-            Forge
+        <header className="h-20 bg-white/90 backdrop-blur-xl border-b border-slate-200 flex items-center justify-between px-10 sticky top-0 z-50">
+          <div className="flex items-center gap-3 font-extrabold text-[22px] text-slate-900 tracking-tight cursor-pointer" onClick={resetTool}>
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white text-[16px] shadow-lg shadow-primary/20">PF</div>
+            PDF Forge
           </div>
           
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-6 text-[14px] font-medium dark:text-slate-400">
-              <span className={cn("cursor-pointer transition-colors", !activeTool ? "text-primary dark:text-neon-green" : "hover:text-primary dark:hover:text-neon-green font-mono")} onClick={resetTool}>Home</span>
-              <span className="cursor-pointer hover:text-primary dark:hover:text-neon-green transition-colors font-mono">NEON_V2</span>
-            </div>
+          <div className="flex items-center gap-8">
+            <nav className="hidden md:flex items-center gap-8 text-[14px] font-semibold text-slate-500">
+              <span className={cn("cursor-pointer transition-all hover:text-primary", !activeTool ? "text-primary" : "")} onClick={resetTool}>Dashboard</span>
+              <span className="cursor-pointer hover:text-primary transition-all">Support</span>
+              <span className="cursor-pointer hover:text-primary transition-all">Pricing</span>
+            </nav>
             
-            <button 
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-600 dark:text-neon-green hover:scale-110 transition-transform shadow-sm"
-            >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
             <button 
               onClick={() => setShowProModal(true)}
               className={cn(
-                "px-4 py-2 rounded-full text-[12px] font-black transition-all",
+                "px-6 py-2.5 rounded-full text-[13px] font-bold transition-all shadow-md",
                 isPro 
-                  ? "bg-green-500 text-white shadow-[0_0_15px_rgba(22,163,74,0.3)]" 
-                  : "bg-primary dark:bg-neon-green text-white dark:text-black shadow-lg"
+                  ? "bg-green-600/10 text-green-700 border border-green-200" 
+                  : "bg-primary text-white hover:shadow-lg hover:shadow-primary/20"
               )}
             >
-              {isPro ? 'PRO_ACTIVE' : 'GET_PRO'}
+              {isPro ? 'PRO Active' : 'Get PRO'}
             </button>
           </div>
         </header>
@@ -473,49 +459,49 @@ export default function App() {
                 exit={{ opacity: 0, y: -10 }}
                 className="w-full flex flex-col items-center"
               >
-                <section className="pt-20 pb-12 px-8 text-center max-w-4xl w-full">
-                  <h1 className="hero-title dark:text-white leading-[1.1] scale-110 mb-6 uppercase tracking-tighter">
-                    Document <span className="text-primary dark:text-neon-green">Mastery</span> Simplified
+                <section className="pt-24 pb-16 px-10 text-center max-w-4xl w-full">
+                  <h1 className="text-6xl font-black text-slate-900 leading-[1.05] tracking-tighter mb-6">
+                    Professional PDF <span className="text-primary italic">Toolkit</span>
                   </h1>
-                  <p className="hero-subtitle dark:text-slate-500 max-w-xl mx-auto text-lg">
-                    The ultra-fast, professional toolkit for all your PDF requirements.
+                  <p className="text-slate-500 text-xl font-medium max-w-2xl mx-auto mb-10">
+                    The fastest way to manage your documents with professional-grade security and speed.
                   </p>
                   
-                  <div className="relative max-w-lg mx-auto group mt-4">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary dark:group-focus-within:text-neon-green transition-colors" size={20} />
+                  <div className="relative max-w-xl mx-auto group">
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={22} />
                     <input 
                       type="text" 
-                      placeholder="Find a professional tool..."
-                      className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-5 px-14 text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 dark:focus:ring-neon-green/10 transition-all dark:text-white font-medium"
+                      placeholder="Search for a tool..."
+                      className="w-full bg-slate-100/50 border border-slate-200 rounded-2xl py-5 px-16 text-lg placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all font-medium"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
                 </section>
 
-                <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-8 pb-20 w-full max-w-[960px]">
+                <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 px-10 pb-24 w-full">
                   {filteredTools.map((tool) => (
                     <motion.div 
                       key={tool.id}
-                      whileHover={{ y: -8 }}
-                      whileTap={{ scale: 0.96 }}
-                      className="tool-card group glass-card"
+                      whileHover={{ y: -10, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="group bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-primary/5 transition-all cursor-pointer relative overflow-hidden backdrop-blur-sm"
                       onClick={() => selectTool(tool)}
                     >
-                      <div className="tool-icon group-hover:rotate-6 transition-transform shadow-sm" style={{ backgroundColor: isDarkMode ? '#111' : tool.iconBg, color: isDarkMode ? '#00FF00' : tool.iconColor, border: '1px solid currentColor', borderOpacity: 0.1 }}>
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-md transition-all group-hover:scale-110 group-hover:rotate-3" style={{ backgroundColor: tool.iconBg, color: tool.iconColor }}>
                         {tool.icon}
                       </div>
-                      <div className="tool-title dark:text-white tracking-tight uppercase">{tool.title}</div>
-                      <div className="tool-desc">{tool.description}</div>
+                      <h3 className="text-lg font-bold text-slate-900 mb-2 tracking-tight">{tool.title}</h3>
+                      <p className="text-slate-500 text-sm leading-relaxed">{tool.description}</p>
                       
                       {tool.requiresPro && !isPro && (
-                        <div className="absolute top-3 right-3 text-slate-400 dark:text-neon-green/50">
-                          <Lock size={14} />
+                        <div className="absolute top-4 right-4 text-slate-300">
+                          <Lock size={16} />
                         </div>
                       )}
                       
                       {tool.tag && (
-                        <div className="absolute bottom-3 right-3 text-[10px] font-black uppercase py-0.5 px-2 rounded bg-slate-100 dark:bg-neon-green/20 dark:text-neon-green text-slate-500 border border-slate-200 dark:border-neon-green/30">
+                        <div className="absolute bottom-4 right-4 text-[10px] font-black uppercase py-0.5 px-2 rounded bg-primary/5 text-primary border border-primary/10">
                           {tool.tag}
                         </div>
                       )}
@@ -529,27 +515,27 @@ export default function App() {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
-                className="w-full max-w-4xl px-8 py-12"
+                className="w-full max-w-4xl px-10 py-16"
               >
                 <button 
                   onClick={resetTool}
-                  className="flex items-center gap-2 text-slate-400 hover:text-slate-900 dark:hover:text-neon-green mb-10 transition-colors text-xs font-black uppercase tracking-widest"
+                  className="flex items-center gap-2 text-slate-400 hover:text-primary mb-12 transition-all text-sm font-bold uppercase tracking-widest"
                 >
-                  <ChevronLeft size={16} /> Return_Home
+                  <ChevronLeft size={18} /> Back to Toolkit
                 </button>
 
-                <div className="bg-white dark:bg-[#0a0a0a] rounded-3xl border border-slate-200 dark:border-slate-800 p-10 shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-8 opacity-5">
-                    {React.cloneElement(activeTool.icon as React.ReactElement, { size: 120 })}
+                <div className="bg-white rounded-[40px] border border-slate-200 p-12 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-slate-900">
+                    {React.cloneElement(activeTool.icon as React.ReactElement, { size: 160 })}
                   </div>
                   
-                  <div className="flex items-center gap-6 mb-12 border-b border-slate-100 dark:border-slate-900 pb-10">
-                    <div className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: isDarkMode ? '#000' : activeTool.iconBg, color: isDarkMode ? '#00FF00' : activeTool.iconColor, border: '1px solid currentColor', borderOpacity: 0.2 }}>
-                      {React.cloneElement(activeTool.icon as React.ReactElement, { size: 40 })}
+                  <div className="flex items-center gap-8 mb-16 pb-12 border-b border-slate-50">
+                    <div className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-xl shadow-slate-100 transition-transform hover:scale-105" style={{ backgroundColor: activeTool.iconBg, color: activeTool.iconColor }}>
+                      {React.cloneElement(activeTool.icon as React.ReactElement, { size: 48 })}
                     </div>
                     <div>
-                      <h2 className="text-4xl font-black tracking-tighter dark:text-white uppercase">{activeTool.title}</h2>
-                      <p className="text-slate-500 dark:text-slate-500 text-lg">{activeTool.description}</p>
+                      <h2 className="text-5xl font-black tracking-tighter text-slate-900 leading-none">{activeTool.title}</h2>
+                      <p className="text-slate-400 text-xl font-medium mt-3">{activeTool.description}</p>
                     </div>
                   </div>
 
@@ -645,16 +631,16 @@ export default function App() {
                             <button 
                               disabled={isProcessing || (activeTool.id === 'merge' && uploadedFiles.length < 2) || (activeTool.id === 'protect' && !password)}
                               onClick={handleAction}
-                              className="btn-primary min-w-[240px] py-4 text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group"
+                              className="bg-primary hover:bg-primary-dark text-white min-w-[280px] py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group transition-all shadow-xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0"
                             >
                               {isProcessing ? (
                                 <>
                                   <Loader2 className="animate-spin" size={24} />
-                                  <span>SYTEM_PROCESSING...</span>
+                                  <span>Processing...</span>
                                 </>
                               ) : (
                                 <>
-                                  <span>{activeTool.title.toUpperCase()}</span>
+                                  <span>{activeTool.title}</span>
                                   <ArrowDownToLine size={24} className="group-hover:translate-y-1 transition-transform" />
                                 </>
                               )}
@@ -677,40 +663,40 @@ export default function App() {
                       key="success"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="bg-green-50 dark:bg-green-950/10 border border-green-100 dark:border-green-900/30 rounded-2xl p-12 flex flex-col items-center text-center shadow-lg"
+                      className="bg-slate-50 border border-slate-200 rounded-[32px] p-16 flex flex-col items-center text-center shadow-lg"
                     >
-                      <div className="w-24 h-24 bg-green-500 dark:bg-neon-green text-white dark:text-black rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-green-500/30 dark:shadow-neon-green/40 ring-8 ring-green-100 dark:ring-neon-green/10">
-                        <Download size={48} className="animate-bounce" />
+                      <div className="w-28 h-28 bg-primary text-white rounded-full flex items-center justify-center mb-8 shadow-2xl shadow-primary/30 ring-8 ring-primary/5">
+                        <Download size={52} className="animate-bounce" />
                       </div>
-                      <h3 className="text-3xl font-black mb-3 dark:text-white uppercase tracking-tight">MISSION COMPLETED</h3>
-                      <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-sm">Your files have been processed by our secure systems. Ready for download.</p>
+                      <h3 className="text-4xl font-black mb-4 text-slate-900 tracking-tighter">SUCCESSFULLY PROCESSED</h3>
+                      <p className="text-slate-500 mb-10 max-w-sm text-lg font-medium">Your professional document is ready for download. Check your filename below.</p>
                       
-                      <div className="w-full max-w-md bg-white dark:bg-black rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm mb-10 space-y-4">
-                         <div className="flex flex-col items-start gap-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Rename Result</label>
+                      <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mb-12 space-y-4">
+                         <div className="flex flex-col items-start gap-2">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Rename Document</label>
                             <input 
                               type="text" 
                               value={outputName}
                               onChange={(e) => setOutputName(e.target.value)}
-                              className="w-full bg-slate-50 dark:bg-[#050505] border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 font-bold text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-neon-green/20"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-5 font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
                               placeholder="Filename..."
                             />
                          </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                      <div className="flex flex-col sm:flex-row gap-5 w-full justify-center">
                         <a 
                           href={resultUrl} 
                           download={`${outputName}.${activeTool.id === 'pdf-to-jpg' ? 'jpg' : 'pdf'}`}
-                          className="btn-primary px-10 py-4 flex items-center justify-center gap-3 text-lg shadow-xl"
+                          className="bg-primary hover:bg-primary-dark text-white px-12 py-5 rounded-2xl flex items-center justify-center gap-3 text-lg font-bold shadow-xl shadow-primary/20 transition-all hover:-translate-y-1"
                         >
-                          <Download size={22} /> DOWNLOAD_RESULT
+                          <Download size={24} /> Download Ready
                         </a>
                         <button 
                           onClick={resetTool}
-                          className="bg-white dark:bg-black border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 py-4 px-10 rounded-lg font-black text-xs hover:bg-slate-50 dark:hover:bg-slate-900 transition-all uppercase tracking-widest shadow-sm"
+                          className="bg-white border border-slate-200 text-slate-500 py-5 px-12 rounded-2xl font-bold text-lg hover:bg-slate-50 transition-all shadow-sm"
                         >
-                          START_NEW_MISSION
+                          New Task
                         </button>
                       </div>
                     </motion.div>
@@ -721,13 +707,13 @@ export default function App() {
           </AnimatePresence>
         </main>
 
-        <footer className="h-14 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-black flex items-center justify-center text-[10px] text-slate-400 font-mono tracking-widest px-8 mt-auto">
+        <footer className="h-16 border-t border-slate-200 bg-white flex items-center justify-center text-[11px] text-slate-400 font-bold tracking-widest px-10 mt-auto">
           <div className="flex-grow flex justify-center uppercase">
-            &copy; 2026 PDF_FORGE_OS // SECURE_DOCUMENT_HANDLING
+            &copy; 2026 PDF Forge Professional // Secure Cloud Documents
           </div>
-          <div className="hidden sm:flex gap-6 uppercase">
-            <a href="#" className="hover:text-primary dark:hover:text-neon-green transition-colors">Privacy_Protocol</a>
-            <a href="#" className="hover:text-primary dark:hover:text-neon-green transition-colors">Terms_of_Engage</a>
+          <div className="hidden sm:flex gap-10 uppercase">
+            <a href="#" className="hover:text-primary transition-colors">Privacy</a>
+            <a href="#" className="hover:text-primary transition-colors">Terms</a>
           </div>
         </footer>
       </div>
@@ -735,56 +721,56 @@ export default function App() {
       {/* PRO Modal */}
       <AnimatePresence>
         {showProModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowProModal(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-[#111] rounded-3xl p-8 shadow-2xl border border-slate-200 dark:border-slate-800"
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              className="relative w-full max-w-md bg-white rounded-[40px] p-10 shadow-3xl border border-slate-100"
             >
               <button 
                 onClick={() => setShowProModal(false)}
-                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+                className="absolute top-6 right-6 p-2 text-slate-300 hover:text-slate-600 transition-colors"
               >
-                <X size={20} />
+                <X size={24} />
               </button>
 
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-primary/10 dark:bg-neon-green/10 rounded-full flex items-center justify-center mx-auto mb-4 text-primary dark:text-neon-green">
-                  <Lock size={32} />
+              <div className="text-center mb-10">
+                <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-6 text-primary shadow-inner">
+                  <Lock size={40} />
                 </div>
-                <h3 className="text-2xl font-black dark:text-white uppercase tracking-tight">Unlock PRO Tools</h3>
-                <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">Convert to Word, Sign Documents, and Unlock encrypted PDFs with PRO access.</p>
+                <h3 className="text-3xl font-black text-slate-900 tracking-tighter">UPGRADE TO PRO</h3>
+                <p className="text-slate-400 mt-3 text-lg font-medium">Unlock full text extraction, secure signing, and advanced document security.</p>
               </div>
 
-              <div className="space-y-4">
-                <div className="bg-slate-50 dark:bg-black rounded-2xl p-6 border border-slate-100 dark:border-slate-900">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 px-1">Activation Code</label>
+              <div className="space-y-6">
+                <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100">
+                  <label className="text-xs font-black text-slate-300 uppercase tracking-widest block mb-3 px-1">Activation Code</label>
                   <input 
                     type="text" 
                     value={activationCode}
                     onChange={(e) => setActivationCode(e.target.value)}
-                    placeholder="ENTER_CODE_HERE..."
-                    className="w-full bg-white dark:bg-[#050505] border border-slate-200 dark:border-slate-800 rounded-xl py-3.5 px-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-neon-green/20 dark:text-white transition-all"
+                    placeholder="Enter Code..."
+                    className="w-full bg-white border border-slate-200 rounded-xl py-4 px-5 font-bold text-lg focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-slate-800"
                   />
                 </div>
 
                 <button 
                   onClick={handleActivatePro}
-                  className="w-full bg-slate-900 dark:bg-neon-green dark:text-black text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl"
+                  className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
                 >
-                  Confirm Activation
+                  Activate Now
                 </button>
                 
-                <p className="text-[10px] text-center text-slate-400 dark:text-slate-600 font-medium">
-                  HINT: THE_KEY_IS_IN_THE_ENGAGEMENT_LOG
+                <p className="text-[11px] text-center text-slate-300 font-bold">
+                  LICENSE KEY REQUIRED FOR ENTERPRISE TOOLS
                 </p>
               </div>
             </motion.div>

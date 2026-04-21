@@ -6,8 +6,6 @@
   --color-primary: #e11d48;
   --color-primary-dark: #be123c;
   --color-accent: #2563eb;
-  --color-neon-green: #00FF00;
-  --color-neon-blue: #00D2FF;
   --color-slate-50: #f8fafc;
   --color-slate-100: #f1f5f9;
   --color-slate-200: #e2e8f0;
@@ -18,71 +16,36 @@
 
 @layer base {
   body {
-    @apply bg-white text-slate-900 font-sans transition-colors duration-300;
+    @apply bg-slate-50 text-slate-900 font-sans transition-colors duration-300;
   }
 }
 
-.dark {
-  --color-slate-50: #050505;
-  --color-slate-100: #101010;
-  --color-slate-200: #202020;
-  --color-slate-400: #606060;
-  --color-slate-600: #a0a0a0;
-  --color-slate-900: #f0f0f0;
-  --color-primary: #00FF00; /* Neon green in dark mode */
-}
-
-.dark body {
-  @apply bg-black text-slate-100;
-}
-
 .glass-card {
-  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
-}
-
-.dark .glass-card {
-  @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl;
+  @apply bg-white/70 backdrop-blur-md border border-white shadow-2xl;
 }
 
 .tool-card {
-  @apply bg-white border border-slate-100 rounded-2xl p-6 flex flex-col items-center text-center transition-all duration-300 cursor-pointer relative overflow-hidden;
-  @apply shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)];
-  min-height: 200px;
+  @apply bg-white border border-slate-100 rounded-[32px] p-8 flex flex-col items-center text-center transition-all duration-300 cursor-pointer relative overflow-hidden;
+  @apply shadow-[0_4px_30px_-5px_rgba(0,0,0,0.03)];
+  min-height: 220px;
 }
 
 .tool-card:hover {
-  @apply border-primary/30 shadow-[0_10px_40px_-10px_rgba(225,29,72,0.15)] -translate-y-1.5;
-}
-
-.dark .tool-card {
-  @apply bg-[#0C0C0C]/80 backdrop-blur-md border border-white/5;
-  @apply shadow-[0_0_20px_rgba(0,0,0,1)];
-}
-
-.dark .tool-card:hover {
-  @apply border-neon-green/30 shadow-[0_0_30px_rgba(0,255,0,0.08)] -translate-y-1.5;
+  @apply border-primary/20 shadow-[0_20px_50px_-10px_rgba(225,29,72,0.1)] -translate-y-2 scale-[1.01];
 }
 
 .tool-icon {
-  @apply w-11 h-11 mb-3 flex items-center justify-center rounded-lg bg-slate-50;
+  @apply w-14 h-14 mb-4 flex items-center justify-center rounded-2xl bg-slate-50 shadow-inner;
 }
 
 .tool-title {
-  @apply font-semibold text-sm mb-1 text-slate-900;
+  @apply font-bold text-lg mb-2 text-slate-900 tracking-tight;
 }
 
 .tool-desc {
-  @apply text-[11px] text-slate-400 leading-relaxed;
+  @apply text-sm text-slate-400 leading-relaxed font-medium;
 }
 
 .btn-primary {
-  @apply bg-primary text-white px-4 py-2 rounded-md text-[13px] font-semibold hover:bg-primary-dark transition-colors border-none cursor-pointer;
-}
-
-.hero-title {
-  @apply text-[32px] font-extrabold mb-3 tracking-tight leading-tight;
-}
-
-.hero-subtitle {
-  @apply text-slate-600 text-base mb-6 font-normal;
+  @apply bg-primary text-white px-6 py-3 rounded-2xl text-[15px] font-bold hover:bg-primary-dark transition-all border-none cursor-pointer shadow-lg shadow-primary/20;
 }
