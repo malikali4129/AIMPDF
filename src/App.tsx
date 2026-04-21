@@ -28,7 +28,7 @@ import { twMerge } from 'tailwind-merge';
 import * as pdfjs from 'pdfjs-dist';
 
 // pdfjs worker setup
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
