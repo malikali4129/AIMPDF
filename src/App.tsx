@@ -21,7 +21,7 @@ import {
   FileCheck,
   Settings
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Reorder } from 'motion/react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -44,6 +44,13 @@ interface Tool {
   iconBg: string;
   iconColor: string;
   tag?: string;
+  requiresPro?: boolean;
+}
+
+interface UploadedFile {
+  id: string;
+  file: File;
+  preview: string;
 }
 
 const TOOLS: Tool[] = [
@@ -77,7 +84,8 @@ const TOOLS: Tool[] = [
     description: 'Extract text from your PDF files into a readable format.',
     icon: <FileText size={24} />,
     iconBg: '#eff6ff',
-    iconColor: '#2563eb'
+    iconColor: '#2563eb',
+    requiresPro: true
   },
   {
     id: 'edit',
@@ -110,7 +118,8 @@ const TOOLS: Tool[] = [
     description: 'Sign a document with a digital signature overlay quickly.',
     icon: <PenTool size={24} />,
     iconBg: '#f0fdf4',
-    iconColor: '#16a34a'
+    iconColor: '#16a34a',
+    requiresPro: true
   },
   {
     id: 'unlock',
@@ -118,7 +127,8 @@ const TOOLS: Tool[] = [
     description: 'Remove PDF password security to use your PDFs as you want.',
     icon: <Unlock size={24} />,
     iconBg: '#fdf2f8',
-    iconColor: '#db2777'
+    iconColor: '#db2777',
+    requiresPro: true
   },
   {
     id: 'protect',
@@ -133,13 +143,16 @@ const TOOLS: Tool[] = [
 export default function App() {
   const [activeTool, setActiveTool] = useState<Tool | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
-  const [outputName, setOutputName] = useState('pdf_oasis_result');
+  const [outputName, setOutputName] = useState('pdf_forge_result');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [password, setPassword] = useState('');
+  const [isPro, setIsPro] = useState(false);
+  const [showProModal, setShowProModal] = useState(false);
+  const [activationCode, setActivationCode] = useState('');
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -150,65 +163,104 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  const generateThumbnails = async (fileList: File[]) => {
-    const thumbs: string[] = [];
-    for (const file of fileList) {
-      if (file.type === 'application/pdf') {
-        try {
-          const arrayBuffer = await file.arrayBuffer();
-          const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-          const page = await pdf.getPage(1);
-          const viewport = page.getViewport({ scale: 0.2 });
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-          await page.render({ canvasContext: context!, viewport, canvas }).promise;
-          thumbs.push(canvas.toDataURL());
-        } catch (e) {
-          thumbs.push('');
-        }
-      } else if (file.type.startsWith('image/')) {
-        thumbs.push(URL.createObjectURL(file));
-      } else {
-        thumbs.push('');
-      }
+  const handleActivatePro = () => {
+    if (activationCode === 'AIMLABPREMIUM') {
+      setIsPro(true);
+      setShowProModal(false);
+      alert('SUCCESS: PDF Forge PRO Activated!');
+    } else {
+      alert('ERROR: Invalid Activation Code');
     }
-    setPreviews(thumbs);
+  };
+
+  const selectTool = (tool: Tool) => {
+    if (tool.requiresPro && !isPro) {
+      setShowProModal(true);
+      return;
+    }
+    setActiveTool(tool);
+  };
+
+  const generateThumbnail = async (file: File): Promise<string> => {
+    if (file.type === 'application/pdf') {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 0.2 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        await page.render({ canvasContext: context!, viewport, canvas }).promise;
+        return canvas.toDataURL();
+      } catch (e) {
+        return '';
+      }
+    } else if (file.type.startsWith('image/')) {
+      return URL.createObjectURL(file);
+    }
+    return '';
+  };
+
+  const addFiles = async (newFiles: File[]) => {
+    const processedFiles: UploadedFile[] = [];
+    for (const file of newFiles) {
+      const preview = await generateThumbnail(file);
+      processedFiles.push({
+        id: Math.random().toString(36).substr(2, 9) + Date.now(),
+        file,
+        preview
+      });
+    }
+    setUploadedFiles(prev => [...prev, ...processedFiles]);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setFiles(prev => [...prev, ...newFiles]);
-      generateThumbnails([...files, ...newFiles]);
+      addFiles(Array.from(e.target.files));
     }
   };
 
-  const removeFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-    setPreviews(prev => prev.filter((_, i) => i !== index));
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(true);
+  };
+
+  const onDragLeave = () => {
+    setIsDraggingOver(false);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    if (e.dataTransfer.files) {
+      addFiles(Array.from(e.dataTransfer.files));
+    }
+  };
+
+  const removeFile = (id: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== id));
   };
 
   const resetTool = () => {
     setActiveTool(null);
-    setFiles([]);
-    setPreviews([]);
+    setUploadedFiles([]);
     setResultUrl(null);
     setIsProcessing(false);
-    setOutputName('pdf_oasis_result');
+    setOutputName('pdf_forge_result');
     setPassword('');
   };
 
   // --- PROCESSING LOGIC ---
 
   const processMerge = async () => {
-    if (files.length < 2) return;
+    if (uploadedFiles.length < 2) return;
     setIsProcessing(true);
     try {
       const mergedPdf = await PDFDocument.create();
-      for (const file of files) {
-        const bytes = await file.arrayBuffer();
+      for (const item of uploadedFiles) {
+        const bytes = await item.file.arrayBuffer();
         const pdf = await PDFDocument.load(bytes);
         const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
         copiedPages.forEach((page) => mergedPdf.addPage(page));
@@ -224,10 +276,10 @@ export default function App() {
   };
 
   const processSplit = async () => {
-    if (files.length === 0) return;
+    if (uploadedFiles.length === 0) return;
     setIsProcessing(true);
     try {
-      const bytes = await files[0].arrayBuffer();
+      const bytes = await uploadedFiles[0].file.arrayBuffer();
       const pdf = await PDFDocument.load(bytes);
       const newPdf = await PDFDocument.create();
       // For this tool, we extract page 1 only as a simple "split" demo
@@ -244,10 +296,10 @@ export default function App() {
   };
 
   const processCompress = async () => {
-    if (files.length === 0) return;
+    if (uploadedFiles.length === 0) return;
     setIsProcessing(true);
     try {
-      const bytes = await files[0].arrayBuffer();
+      const bytes = await uploadedFiles[0].file.arrayBuffer();
       const pdf = await PDFDocument.load(bytes);
       // pdf-lib re-saving often reduces size by cleaning up objects
       const pdfBytes = await pdf.save({ useObjectStreams: false });
@@ -261,10 +313,10 @@ export default function App() {
   };
 
   const processPdfToJpg = async () => {
-    if (files.length === 0) return;
+    if (uploadedFiles.length === 0) return;
     setIsProcessing(true);
     try {
-      const arrayBuffer = await files[0].arrayBuffer();
+      const arrayBuffer = await uploadedFiles[0].file.arrayBuffer();
       const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
       const page = await pdf.getPage(1); // Demo: convert 1st page
       const viewport = page.getViewport({ scale: 2.0 });
@@ -287,15 +339,15 @@ export default function App() {
   };
 
   const processJpgToPdf = async () => {
-    if (files.length === 0) return;
+    if (uploadedFiles.length === 0) return;
     setIsProcessing(true);
     try {
       const pdfDoc = await PDFDocument.create();
-      for (const file of files) {
-        const imageBytes = await file.arrayBuffer();
+      for (const item of uploadedFiles) {
+        const imageBytes = await item.file.arrayBuffer();
         let image;
-        if (file.type === 'image/jpeg' || file.type === 'image/jpg') image = await pdfDoc.embedJpg(imageBytes);
-        else if (file.type === 'image/png') image = await pdfDoc.embedPng(imageBytes);
+        if (item.file.type === 'image/jpeg' || item.file.type === 'image/jpg') image = await pdfDoc.embedJpg(imageBytes);
+        else if (item.file.type === 'image/png') image = await pdfDoc.embedPng(imageBytes);
         else continue;
         const page = pdfDoc.addPage([image.width, image.height]);
         page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
@@ -311,10 +363,10 @@ export default function App() {
   };
 
   const processEdit = async () => {
-    if (files.length === 0) return;
+    if (uploadedFiles.length === 0) return;
     setIsProcessing(true);
     try {
-      const bytes = await files[0].arrayBuffer();
+      const bytes = await uploadedFiles[0].file.arrayBuffer();
       const pdfDoc = await PDFDocument.load(bytes);
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const pages = pdfDoc.getPages();
@@ -338,12 +390,12 @@ export default function App() {
   };
 
   const processProtect = async () => {
-    if (files.length === 0 || !password) return;
+    if (uploadedFiles.length === 0 || !password) return;
     setIsProcessing(true);
     // pdf-lib encryption can be complex, for demo we just re-save it
     // Real encryption usually requires more advanced libraries like qpdf on server
     try {
-      const bytes = await files[0].arrayBuffer();
+      const bytes = await uploadedFiles[0].file.arrayBuffer();
       const pdfDoc = await PDFDocument.load(bytes);
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -375,11 +427,11 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-black transition-colors duration-300 overflow-x-hidden">
-      <div className="flex flex-col flex-grow max-w-[1024px] mx-auto w-full bg-white dark:bg-[#080808] shadow-2xl min-h-screen border-x border-slate-200 dark:border-slate-800">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-black transition-colors duration-300 overflow-x-hidden">
+      <div className="flex flex-col flex-grow max-w-[1024px] mx-auto w-full bg-white dark:bg-[#050505] shadow-2xl min-h-screen border-x border-slate-200 dark:border-slate-800">
         
         {/* Header */}
-        <header className="h-16 bg-white dark:bg-black border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 sticky top-0 z-50">
+        <header className="h-16 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 sticky top-0 z-50">
           <div className="flex items-center gap-2 font-extrabold text-[20px] text-slate-900 dark:text-white tracking-tight cursor-pointer" onClick={resetTool}>
             <div className="w-8 h-8 bg-primary dark:bg-neon-green rounded flex items-center justify-center text-white dark:text-black text-[14px]">PDF</div>
             Forge
@@ -387,18 +439,27 @@ export default function App() {
           
           <div className="flex items-center gap-6">
             <div className="hidden md:flex items-center gap-6 text-[14px] font-medium dark:text-slate-400">
-              <span className="text-primary dark:text-neon-green cursor-pointer" onClick={resetTool}>Home</span>
-              <span className="cursor-pointer hover:text-primary dark:hover:text-neon-green transition-colors">Products</span>
+              <span className={cn("cursor-pointer transition-colors", !activeTool ? "text-primary dark:text-neon-green" : "hover:text-primary dark:hover:text-neon-green font-mono")} onClick={resetTool}>Home</span>
               <span className="cursor-pointer hover:text-primary dark:hover:text-neon-green transition-colors font-mono">NEON_V2</span>
             </div>
             
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-600 dark:text-neon-green hover:scale-110 transition-transform shadow-[0_0_10px_rgba(0,0,255,0.1)] dark:shadow-[0_0_15px_rgba(0,255,0,0.2)]"
+              className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-600 dark:text-neon-green hover:scale-110 transition-transform shadow-sm"
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-            <button className="btn-primary ml-2">PRO</button>
+            <button 
+              onClick={() => setShowProModal(true)}
+              className={cn(
+                "px-4 py-2 rounded-full text-[12px] font-black transition-all",
+                isPro 
+                  ? "bg-green-500 text-white shadow-[0_0_15px_rgba(22,163,74,0.3)]" 
+                  : "bg-primary dark:bg-neon-green text-white dark:text-black shadow-lg"
+              )}
+            >
+              {isPro ? 'PRO_ACTIVE' : 'GET_PRO'}
+            </button>
           </div>
         </header>
 
@@ -412,42 +473,49 @@ export default function App() {
                 exit={{ opacity: 0, y: -10 }}
                 className="w-full flex flex-col items-center"
               >
-                <section className="pt-16 pb-12 px-8 text-center max-w-4xl w-full">
-                  <h1 className="hero-title dark:text-white">
-                    Every tool you need to work with PDFs
+                <section className="pt-20 pb-12 px-8 text-center max-w-4xl w-full">
+                  <h1 className="hero-title dark:text-white leading-[1.1] scale-110 mb-6 uppercase tracking-tighter">
+                    Document <span className="text-primary dark:text-neon-green">Mastery</span> Simplified
                   </h1>
-                  <p className="hero-subtitle dark:text-slate-500">
-                    Merge, edit, compress, and convert documents in seconds with <span className="text-primary dark:text-neon-green font-bold">PDF Forge</span>.
+                  <p className="hero-subtitle dark:text-slate-500 max-w-xl mx-auto text-lg">
+                    The ultra-fast, professional toolkit for all your PDF requirements.
                   </p>
                   
-                  <div className="relative max-w-lg mx-auto group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary dark:group-focus-within:text-neon-green transition-colors" size={18} />
+                  <div className="relative max-w-lg mx-auto group mt-4">
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary dark:group-focus-within:text-neon-green transition-colors" size={20} />
                     <input 
                       type="text" 
-                      placeholder="Search for a tool (e.g. Merge, Convert)..."
-                      className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full py-3.6 px-12 text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 dark:focus:ring-neon-green/10 transition-all dark:text-white"
+                      placeholder="Find a professional tool..."
+                      className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-5 px-14 text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 dark:focus:ring-neon-green/10 transition-all dark:text-white font-medium"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
                 </section>
 
-                <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 px-8 pb-16 w-full max-w-7xl">
+                <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-8 pb-20 w-full max-w-[960px]">
                   {filteredTools.map((tool) => (
                     <motion.div 
                       key={tool.id}
-                      whileHover={{ y: -6, scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="tool-card group"
-                      onClick={() => setActiveTool(tool)}
+                      whileHover={{ y: -8 }}
+                      whileTap={{ scale: 0.96 }}
+                      className="tool-card group glass-card"
+                      onClick={() => selectTool(tool)}
                     >
-                      <div className="tool-icon group-hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: isDarkMode ? '#000' : tool.iconBg, color: isDarkMode ? '#00FF00' : tool.iconColor, border: isDarkMode ? '1px solid #202020' : 'none' }}>
+                      <div className="tool-icon group-hover:rotate-6 transition-transform shadow-sm" style={{ backgroundColor: isDarkMode ? '#111' : tool.iconBg, color: isDarkMode ? '#00FF00' : tool.iconColor, border: '1px solid currentColor', borderOpacity: 0.1 }}>
                         {tool.icon}
                       </div>
-                      <div className="tool-title">{tool.title}</div>
+                      <div className="tool-title dark:text-white tracking-tight uppercase">{tool.title}</div>
                       <div className="tool-desc">{tool.description}</div>
+                      
+                      {tool.requiresPro && !isPro && (
+                        <div className="absolute top-3 right-3 text-slate-400 dark:text-neon-green/50">
+                          <Lock size={14} />
+                        </div>
+                      )}
+                      
                       {tool.tag && (
-                        <div className="absolute top-2 right-2 text-[8px] font-bold uppercase py-0.5 px-1.5 rounded-full bg-slate-100 dark:bg-neon-green dark:text-black text-slate-600 pulse-neon">
+                        <div className="absolute bottom-3 right-3 text-[10px] font-black uppercase py-0.5 px-2 rounded bg-slate-100 dark:bg-neon-green/20 dark:text-neon-green text-slate-500 border border-slate-200 dark:border-neon-green/30">
                           {tool.tag}
                         </div>
                       )}
@@ -458,79 +526,104 @@ export default function App() {
             ) : (
               <motion.div 
                 key="tool-view"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
                 className="w-full max-w-4xl px-8 py-12"
               >
                 <button 
                   onClick={resetTool}
-                  className="flex items-center gap-1 text-slate-400 hover:text-slate-900 dark:hover:text-neon-green mb-8 transition-colors text-sm font-medium"
+                  className="flex items-center gap-2 text-slate-400 hover:text-slate-900 dark:hover:text-neon-green mb-10 transition-colors text-xs font-black uppercase tracking-widest"
                 >
-                  <ChevronLeft size={16} /> Back to Dashboard
+                  <ChevronLeft size={16} /> Return_Home
                 </button>
 
-                <div className="bg-white dark:bg-[#101010] rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
-                  <div className="flex items-center gap-5 mb-10 border-b border-slate-100 dark:border-slate-800 pb-8">
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner" style={{ backgroundColor: isDarkMode ? '#000' : activeTool.iconBg, color: isDarkMode ? '#00FF00' : activeTool.iconColor, border: isDarkMode ? '1px solid #202020' : 'none' }}>
-                      {React.cloneElement(activeTool.icon as React.ReactElement, { size: 32 })}
+                <div className="bg-white dark:bg-[#0a0a0a] rounded-3xl border border-slate-200 dark:border-slate-800 p-10 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 opacity-5">
+                    {React.cloneElement(activeTool.icon as React.ReactElement, { size: 120 })}
+                  </div>
+                  
+                  <div className="flex items-center gap-6 mb-12 border-b border-slate-100 dark:border-slate-900 pb-10">
+                    <div className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: isDarkMode ? '#000' : activeTool.iconBg, color: isDarkMode ? '#00FF00' : activeTool.iconColor, border: '1px solid currentColor', borderOpacity: 0.2 }}>
+                      {React.cloneElement(activeTool.icon as React.ReactElement, { size: 40 })}
                     </div>
                     <div>
-                      <h2 className="text-3xl font-extrabold tracking-tight dark:text-white uppercase">{activeTool.title}</h2>
-                      <p className="text-slate-600 dark:text-slate-500">{activeTool.description}</p>
+                      <h2 className="text-4xl font-black tracking-tighter dark:text-white uppercase">{activeTool.title}</h2>
+                      <p className="text-slate-500 dark:text-slate-500 text-lg">{activeTool.description}</p>
                     </div>
                   </div>
 
                   {!resultUrl ? (
                     <div className="space-y-6">
-                      {files.length === 0 ? (
+                      {uploadedFiles.length === 0 ? (
                         <div 
+                          onDragOver={onDragOver}
+                          onDragLeave={onDragLeave}
+                          onDrop={onDrop}
                           onClick={() => fileInputRef.current?.click()}
-                          className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-16 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-primary/50 dark:hover:border-neon-green/50 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all group shadow-sm bg-slate-50/50 dark:bg-black/50"
+                          className={cn(
+                            "border-2 border-dashed rounded-xl p-16 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all group shadow-sm",
+                            isDraggingOver 
+                              ? "border-primary dark:border-neon-green bg-primary/5 dark:bg-neon-green/5 scale-[1.02]" 
+                              : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-black/50 hover:border-primary/50 dark:hover:border-neon-green/50 hover:bg-slate-50 dark:hover:bg-slate-900"
+                          )}
                         >
-                          <div className="w-20 h-20 bg-white dark:bg-black border border-slate-200 dark:border-slate-800 rounded-full flex items-center justify-center text-slate-400 group-hover:scale-110 group-hover:text-primary dark:group-hover:text-neon-green transition-all shadow-lg group-hover:shadow-primary/10 dark:group-hover:shadow-neon-green/20">
+                          <div className={cn(
+                            "w-20 h-20 bg-white dark:bg-black border rounded-full flex items-center justify-center text-slate-400 group-hover:scale-110 group-hover:text-primary dark:group-hover:text-neon-green transition-all shadow-lg",
+                            isDraggingOver ? "text-primary dark:text-neon-green border-primary dark:border-neon-green scale-110 shadow-primary/20" : "border-slate-200 dark:border-slate-800"
+                          )}>
                             <Upload size={36} />
                           </div>
                           <div className="text-center">
-                            <span className="font-extrabold text-xl dark:text-white">Choose Files</span>
+                            <span className="font-extrabold text-xl dark:text-white">Choose or Drop Files</span>
                             <p className="text-slate-400 text-sm mt-1">Select documents from your computer</p>
                           </div>
                         </div>
                       ) : (
                         <div className="space-y-6">
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                            {files.map((file, i) => (
-                              <motion.div 
-                                layout
+                          <Reorder.Group 
+                            axis="x" 
+                            values={uploadedFiles} 
+                            onReorder={setUploadedFiles}
+                            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6"
+                          >
+                            {uploadedFiles.map((item) => (
+                              <Reorder.Item 
+                                key={item.id} 
+                                value={item}
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                key={i} 
-                                className="relative bg-white dark:bg-black border border-slate-200 dark:border-slate-800 rounded-xl p-3 group shadow-sm hover:shadow-md transition-shadow"
+                                className="relative bg-white dark:bg-black border border-slate-200 dark:border-slate-800 rounded-xl p-3 group shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
                               >
                                 <button 
-                                  onClick={() => removeFile(i)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeFile(item.id);
+                                  }}
                                   className="absolute -top-3 -right-3 w-8 h-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 dark:hover:text-white dark:hover:bg-red-600 shadow-md z-10 transition-all"
                                 >
                                   <X size={16} />
                                 </button>
-                                <div className="w-full aspect-[3/4] bg-slate-50 dark:bg-[#080808] border border-slate-100 dark:border-slate-900 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                                   {previews[i] ? (
-                                     <img src={previews[i]} alt="Preview" className="w-full h-full object-cover" />
+                                <div className="w-full aspect-[3/4] bg-slate-50 dark:bg-[#080808] border border-slate-100 dark:border-slate-900 rounded-lg mb-3 flex items-center justify-center overflow-hidden pointer-events-none">
+                                   {item.preview ? (
+                                     <img src={item.preview} alt="Preview" className="w-full h-full object-cover" />
                                    ) : (
                                      <FileCheck size={32} className="text-slate-200 dark:text-slate-800" />
                                    )}
                                 </div>
-                                <div className="text-[10px] font-bold truncate text-center text-slate-500 dark:text-slate-400 px-2">{file.name}</div>
-                              </motion.div>
+                                <div className="text-[10px] font-bold truncate text-center text-slate-500 dark:text-slate-400 px-2 pointer-events-none">{item.file.name}</div>
+                              </Reorder.Item>
                             ))}
                             <div 
                               onClick={() => fileInputRef.current?.click()}
+                              onDragOver={onDragOver}
+                              onDrop={onDrop}
                               className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition-all min-h-[160px] opacity-60 hover:opacity-100"
                             >
                               <Upload size={24} className="text-slate-400" />
                               <span className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase">Add File</span>
                             </div>
-                          </div>
+                          </Reorder.Group>
 
                           {(activeTool.id === 'protect' || activeTool.id === 'unlock') && (
                             <div className="max-w-xs mx-auto space-y-2">
@@ -550,7 +643,7 @@ export default function App() {
 
                           <div className="flex justify-center pt-10">
                             <button 
-                              disabled={isProcessing || (activeTool.id === 'merge' && files.length < 2) || (activeTool.id === 'protect' && !password)}
+                              disabled={isProcessing || (activeTool.id === 'merge' && uploadedFiles.length < 2) || (activeTool.id === 'protect' && !password)}
                               onClick={handleAction}
                               className="btn-primary min-w-[240px] py-4 text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group"
                             >
@@ -638,6 +731,66 @@ export default function App() {
           </div>
         </footer>
       </div>
+
+      {/* PRO Modal */}
+      <AnimatePresence>
+        {showProModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowProModal(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-[#111] rounded-3xl p-8 shadow-2xl border border-slate-200 dark:border-slate-800"
+            >
+              <button 
+                onClick={() => setShowProModal(false)}
+                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-primary/10 dark:bg-neon-green/10 rounded-full flex items-center justify-center mx-auto mb-4 text-primary dark:text-neon-green">
+                  <Lock size={32} />
+                </div>
+                <h3 className="text-2xl font-black dark:text-white uppercase tracking-tight">Unlock PRO Tools</h3>
+                <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">Convert to Word, Sign Documents, and Unlock encrypted PDFs with PRO access.</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-slate-50 dark:bg-black rounded-2xl p-6 border border-slate-100 dark:border-slate-900">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 px-1">Activation Code</label>
+                  <input 
+                    type="text" 
+                    value={activationCode}
+                    onChange={(e) => setActivationCode(e.target.value)}
+                    placeholder="ENTER_CODE_HERE..."
+                    className="w-full bg-white dark:bg-[#050505] border border-slate-200 dark:border-slate-800 rounded-xl py-3.5 px-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-neon-green/20 dark:text-white transition-all"
+                  />
+                </div>
+
+                <button 
+                  onClick={handleActivatePro}
+                  className="w-full bg-slate-900 dark:bg-neon-green dark:text-black text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl"
+                >
+                  Confirm Activation
+                </button>
+                
+                <p className="text-[10px] text-center text-slate-400 dark:text-slate-600 font-medium">
+                  HINT: THE_KEY_IS_IN_THE_ENGAGEMENT_LOG
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
